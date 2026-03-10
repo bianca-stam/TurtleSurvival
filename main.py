@@ -1,20 +1,26 @@
+import random
+
 import arcade
 
 # Constants
 # Para la ventana
-WINDOW_WIDTH = 1280
+WINDOW_WIDTH = 900
 WINDOW_HEIGHT = 720
 WINDOW_TITLE = "FishyFishy"
 
 # Para el movimiento
 MOVEMENT_SPEED = 500
 
+
+
+SPAWN_INTERVAL = 0.5  # segundos entre cada enemigo
+
 window = arcade.Window(width=WINDOW_WIDTH, height=WINDOW_HEIGHT, title=WINDOW_TITLE)
 window.center_window()
 window.background_color = arcade.color.BABY_BLUE
 
 
-# Clase para controlar el jugador que hereda la de arcade.Sprite
+# Clase para controlar el jugador que hereda la de la classe arcade.Sprite
 class Player(arcade.Sprite):
     def __init__(self, texture_list: list[arcade.Texture]):
         super().__init__(texture_list[0])
@@ -44,6 +50,7 @@ class GameView(arcade.View):
         super().__init__()
 
         # Generamos la lista para generar varios sprites al mismo tiempo
+        # Una para el jugador, otra para los enemigos y otra para el fondo de pantalla
         self.player_list = arcade.SpriteList()
         self.sprite_list = arcade.SpriteList()
         self.background_sprite_list = arcade.SpriteList()
@@ -59,31 +66,33 @@ class GameView(arcade.View):
 
         self.player = Player(texture_list)
         self.player.scale = 1.5
-        self.player.position = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+        self.player_x = WINDOW_WIDTH/2
+        self.player_y = WINDOW_HEIGHT/2
+        self.player.position = (self.player_x, self.player_y)
         self.player_list.append(self.player)
 
-        self.directions = {'left': False, 'right': False, 'up': False, 'down': False}
-        self.player_x = 640
-        self.player_y = 360
+        self.player_directions = {'left': False, 'right': False, 'up': False, 'down': False}
         self.player_speed = MOVEMENT_SPEED
 
         # Para los enemigos
-        # La medusita
-        jelly_sheet = arcade.load_spritesheet("assets/images/sprites/Jellyfish/Walk.png")
-        jelly_texture_list = jelly_sheet.get_texture_grid(size=(48, 48), columns=4, count=4)
-
-        self.jellyfish = Player(jelly_texture_list)
-        self.jellyfish.scale = 1.5
-        self.jellyfish.position = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3)
-        self.sprite_list.append(self.jellyfish)
-        # La serpiente
+        # Cargamos las texturas de los enemigos para usarlas al hacer spawn
         snake_sheet = arcade.load_spritesheet("assets/images/sprites/Snake/Walk.png")
-        snake_texture_list = snake_sheet.get_texture_grid(size=(48, 48), columns=4, count=4)
+        octopus_sheet = arcade.load_spritesheet("assets/images/sprites/Octopus/Idle.png")
+        shark_sheet = arcade.load_spritesheet("assets/images/sprites/Shark/Idle.png")
+        jelly_sheet = arcade.load_spritesheet("assets/images/sprites/Jellyfish/Walk.png")
+        angler_sheet = arcade.load_spritesheet("assets/images/sprites/Anglerfish/Walk.png")
 
-        self.snake = Player(snake_texture_list)
-        self.snake.scale = 1.5
-        self.snake.position = (100, 100)
-        self.sprite_list.append(self.snake)
+        # Guardamos las texturas en una lista para elegir aleatoriamente
+        self.enemy_textures = [
+            {"textures": snake_sheet.get_texture_grid(size=(48, 48), columns=4, count=4), "scale": 1.5},
+            {"textures": octopus_sheet.get_texture_grid(size=(48, 48), columns=4, count=4), "scale": 1.5},
+            {"textures": shark_sheet.get_texture_grid(size=(48, 48), columns=4, count=4), "scale": 2.0},
+            {"textures": jelly_sheet.get_texture_grid(size=(48, 48), columns=4, count=4), "scale": 1.5},
+            {"textures": angler_sheet.get_texture_grid(size=(48, 48), columns=4, count=4), "scale": 1.5},
+        ]
+
+        # Para el spawn de enemigos
+        self.tiempo_spawn = 0
 
         # Para las colisiones
         self.hit_base_color = arcade.color.WHITE
@@ -92,17 +101,34 @@ class GameView(arcade.View):
 
         self.collides_with_sprite: arcade.Sprite | None = None
 
-        """
-        # Añadimos la animación
-        frames = []
-        for tex in texture_list:
-            frames.append(arcade.TextureKeyframe(tex))  # TextureKeyframe Una foto individual
+    def add_enemy(self):
+        """Crea un enemigo aleatorio en el borde izquierdo de la pantalla"""
+        enemy_data = random.choice(self.enemy_textures)
 
-        anim = arcade.TextureAnimation(frames)  # El álbum de fotos ordenado
-        self.animPlayer = arcade.TextureAnimationSprite(animation=anim)  # La persona que hojea el álbum
-        self.animPlayer.position = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-        self.sprite_list.append(self.animPlayer)
-        """
+        enemy = Player(enemy_data["textures"])
+        enemy.scale = enemy_data["scale"]
+
+
+        self.sideSpawn = [
+            {"lado": "up", "x": random.randint(50, WINDOW_WIDTH - 50), "y": WINDOW_HEIGHT + 50,
+                    "speed_X": 0, "speed_Y": -MOVEMENT_SPEED},  # Lado de arriba
+            {"lado": "down", "x": random.randint(50, WINDOW_WIDTH - 50), "y": -50,
+                    "speed_X": 0, "speed_Y": MOVEMENT_SPEED},  # Lado abajo
+            {"lado": "left", "x": -50 , "y": random.randint(50, WINDOW_HEIGHT - 50),
+                    "speed_X": MOVEMENT_SPEED, "speed_Y": 0}, # Lado izquierdo
+            {"lado": "right", "x": WINDOW_WIDTH + 50, "y": random.randint(50, WINDOW_HEIGHT - 50),
+                    "speed_X": -MOVEMENT_SPEED, "speed_Y": 0}, # Lado derecho
+        ]
+
+        self.randomCoordenates = random.choice(self.sideSpawn)
+
+        enemy.center_x = self.randomCoordenates["x"]
+        enemy.center_y = self.randomCoordenates["y"]
+        enemy.lado = self.randomCoordenates["lado"]
+        enemy.speed_X = self.randomCoordenates["speed_X"]
+        enemy.speed_Y = self.randomCoordenates["speed_Y"]
+
+        self.sprite_list.append(enemy)
 
     def setup(self):
         pass
@@ -114,13 +140,6 @@ class GameView(arcade.View):
         self.sprite_list.draw()
         self.player_list.draw()
 
-        # sarcade.draw_ellipse_filled(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 30, 30, arcade.color.BALL_BLUE)
-
-        # draw_text es muy lento, sólo para debuggear!
-        # arcade.draw_text(f"x = {self.circle_x:.2f}, y = {self.circle_y:.2f}",
-        #                 10, 700,
-        #                 arcade.color.BLACK, 14)s
-
         if self.collision:
             self.player_list.draw_hit_boxes(self.hit_coll_color)
         else:
@@ -131,40 +150,73 @@ class GameView(arcade.View):
     def on_key_press(self, key: int, modifiers: int) -> None:
         """Called whenever a key is pressed. """
         if key == arcade.key.W:
-            self.directions['up'] = True
+            self.player_directions['up'] = True
         if key == arcade.key.S:
-            self.directions['down'] = True
+            self.player_directions['down'] = True
 
         if key == arcade.key.A:
-            self.directions['left'] = True
+            self.player_directions['left'] = True
         if key == arcade.key.D:
-            self.directions['right'] = True
+            self.player_directions['right'] = True
 
     def on_key_release(self, key: int, modifiers: int) -> None:
         """Called when the user releases a key. """
         if key == arcade.key.W:
-            self.directions['up'] = False
+            self.player_directions['up'] = False
         if key == arcade.key.S:
-            self.directions['down'] = False
+            self.player_directions['down'] = False
 
         if key == arcade.key.A:
-            self.directions['left'] = False
+            self.player_directions['left'] = False
         if key == arcade.key.D:
-            self.directions['right'] = False
+            self.player_directions['right'] = False
 
     def on_update(self, delta_time: float) -> None:
         self.sprite_list.update()
+        self.player_list.update()
 
-        if self.directions['left']:
+        if self.player_directions['left']:
             self.player_x -=  self.player_speed * delta_time
-        if self.directions['right']:
+        if self.player_directions['right']:
             self.player_x +=  self.player_speed * delta_time
-        if self.directions['up']:
+        if self.player_directions['up']:
             self.player_y +=  self.player_speed * delta_time
-        if self.directions['down']:
+        if self.player_directions['down']:
             self.player_y -=  self.player_speed * delta_time
 
         self.player.position = self.player_x, self.player_y
+
+        # Mover enemigos hacia la derecha y eliminarlos si salen de pantalla
+        for enemy in self.sprite_list:
+            if enemy.lado == "up":
+                enemy.center_y += enemy.speed_Y * delta_time
+
+                if enemy.center_y < 0:
+                    enemy.remove_from_sprite_lists()
+
+            if enemy.lado == "down":
+                enemy.center_y += enemy.speed_Y * delta_time
+
+                if enemy.center_y > WINDOW_HEIGHT + 50:
+                    enemy.remove_from_sprite_lists()
+
+            if enemy.lado == "left":
+                enemy.center_x += enemy.speed_X * delta_time
+
+                if enemy.center_x > WINDOW_WIDTH + 50:
+                    enemy.remove_from_sprite_lists()
+
+            if enemy.lado == "right":
+                enemy.center_x += enemy.speed_X * delta_time
+
+                if enemy.center_x < 0:
+                    enemy.remove_from_sprite_lists()
+
+        # Spawn de enemigos cada SPAWN_INTERVAL segundos
+        self.tiempo_spawn += delta_time
+        if self.tiempo_spawn >= SPAWN_INTERVAL:
+            self.add_enemy()
+            self.tiempo_spawn = 0
 
         hit =  arcade.check_for_collision_with_list(self.player, self.sprite_list)
 
@@ -177,10 +229,6 @@ class GameView(arcade.View):
                 self.collides_with_sprite.color = self.hit_base_color
                 self.collides_with_sprite = None
             self.collision = False
-
-
-
-
 
 
 game = GameView()
