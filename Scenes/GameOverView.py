@@ -8,6 +8,47 @@ class GameOverView(arcade.View):
         super().__init__()
         self.final_score = final_score
 
+        self.background_sprite_list = arcade.SpriteList()
+
+        # Background
+        background = "assets/images/background/background1/orig_big.png"
+        self.backgroung_img = arcade.Sprite(background, scale=0.6, center_x=WINDOW_WIDTH / 2,
+                                            center_y=WINDOW_HEIGHT / 2)
+        self.background_sprite_list.append(self.backgroung_img)
+
+        self.start_x = WINDOW_WIDTH / 2
+        self.start_y = WINDOW_HEIGHT / 2
+
+        self.text_game_over = arcade.Text(
+            text="GAME OVER",
+            x=self.start_x, y=self.start_y + DEFAULT_LINE_HEIGHT,
+            color=arcade.color.RED_DEVIL,
+            font_size=50,
+            font_name="Kenney Pixel Square",
+            anchor_x="center",
+            anchor_y="baseline",
+        )
+
+        self.text_score = arcade.Text(
+            text=f"Tu puntuación: {self.final_score}",
+            x=self.start_x, y=self.start_y - DEFAULT_LINE_HEIGHT,
+            color=arcade.color.YELLOW,
+            font_size=DEFAULT_FONT_SIZE,
+            font_name="Kenney Pixel",
+            anchor_x="center",
+            anchor_y="baseline",
+        )
+
+        self.text_main_window = arcade.Text(
+            text="Pulsa cualquier tecla para volver al menú...",
+            x=self.start_x, y=self.start_y - DEFAULT_LINE_HEIGHT * 1.5,
+            color=arcade.color.WHITE,
+            font_size=DEFAULT_FONT_SIZE,
+            font_name="Kenney Pixel",
+            anchor_x="center",
+            anchor_y="baseline",
+        )
+
     def on_show_view(self):
         arcade.set_background_color(arcade.color.BATTLESHIP_GREY)
         if self.final_score > self.window.high_score:
@@ -15,14 +56,12 @@ class GameOverView(arcade.View):
 
     def on_draw(self):
         self.clear()
-        arcade.draw_text("GAME OVER", WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.6,
-                         arcade.color.RED_DEVIL, font_size=50, anchor_x="center")
 
-        arcade.draw_text(f"Tu puntuación: {self.final_score}", WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.4,
-                         arcade.color.WHITE, font_size=20, anchor_x="center")
+        self.background_sprite_list.draw()
 
-        arcade.draw_text("Pulsa cualquier tecla para volver al menú", WINDOW_WIDTH / 2, WINDOW_HEIGHT * 0.2,
-                         arcade.color.WHITE, font_size=15, anchor_x="center")
+        self.text_game_over.draw()
+        self.text_score.draw()
+        self.text_main_window.draw()
 
     def on_key_press(self, symbol, modifiers):
         from main import MenuView

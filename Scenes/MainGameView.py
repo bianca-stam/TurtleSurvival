@@ -3,17 +3,6 @@ import random
 from constants import *
 from Sprites import *
 
-# Para el texto
-DEFAULT_LINE_HEIGHT = 45
-DEFAULT_FONT_SIZE = 20
-arcade.resources.load_kenney_fonts()
-arcade.resources.load_liberation_fonts()
-
-# Para el movimiento
-PLAYER_MOVEMENT_SPEED = 100
-MOB_MOVEMENT_SPEED = 200
-SPAWN_INTERVAL = 0.5  # segundos entre cada enemigo
-
 class GameView(arcade.View):
     """
     Main application class.
@@ -40,10 +29,7 @@ class GameView(arcade.View):
         self.tiempo_spawn = 0
 
         # Para las colisiones
-        self.hit_base_color = arcade.color.WHITE
-        self.hit_coll_color = arcade.color.RED
         self.collision = False
-
         self.collides_with_sprite: arcade.Sprite | None = None
 
         # Generamos la lista para generar varios sprites al mismo tiempo
@@ -61,7 +47,11 @@ class GameView(arcade.View):
         player_sheet = arcade.load_spritesheet("assets/images/sprites/Turtle/Idle.png")
         texture_list = player_sheet.get_texture_grid(size=(48, 48), columns=4, count=4)
 
-        self.player = Player(texture_list)
+        # Para el jugador cuando muera
+        player_sheet_death = arcade.load_spritesheet("assets/images/sprites/Turtle/Death.png")
+        texture_list_death = player_sheet_death.get_texture_grid(size=(48, 48), columns=6, count=6)
+
+        self.player = Player(texture_list, texture_list_death)
         self.player.scale = 1.5
         self.player_x = WINDOW_WIDTH/2
         self.player_y = WINDOW_HEIGHT/2
@@ -148,9 +138,6 @@ class GameView(arcade.View):
         self.sprite_list.draw()
         self.player_list.draw()
 
-        if self.collision:
-            self.player_list.draw_hit_boxes(self.hit_coll_color)
-
         self.text_main_title.draw()
 
         text_points = arcade.Text(
@@ -162,6 +149,7 @@ class GameView(arcade.View):
             anchor_x="center",
             anchor_y="baseline",
         )
+
         text_points.draw()
 
     def on_key_press(self, key: int, modifiers: int) -> None:
@@ -188,12 +176,12 @@ class GameView(arcade.View):
         if key == arcade.key.D:
             self.player_directions['right'] = False
 
-    def on_update(self, delta_time: float) -> None:
-        self.sprite_list.update()
-        self.player_list.update()
+    def on_update(self, delta_time: float = 1 / 60, *args, **kwargs):
+        self.sprite_list.update(delta_time)
+        self.player_list.update(delta_time)
 
         self.time_elapsed += delta_time
-        self.score_points = int(self.time_elapsed * 1)  # 1 punto por segundo
+        self.score_points = int(self.time_elapsed * POINTS_PER_SECOND)
         self.score_points += int(self.time_elapsed * delta_time)
 
         if self.player_directions['left']:
@@ -241,18 +229,22 @@ class GameView(arcade.View):
             self.add_enemy()
             self.tiempo_spawn = 0
 
-        hit =  arcade.check_for_collision_with_list(self.player, self.sprite_list)
+        # Comprobar muerte
+        hit = arcade.check_for_collision_with_list(self.player, self.sprite_list)
 
         if hit:
             self.collides_with_sprite = hit[0]
-            self.collides_with_sprite_color = self.hit_coll_color
-            self.collision = True
+            # En caso de que colisione es porq ha muerto
+            self.player.die()
+            self.player_speed = 0
 
+        else:
+            if self.collides_with_sprite:
+                self.collides_with_sprite = None
+                # FALTA CODIGO!
+            self.collision = False
+
+        if self.player.ready_for_game_over:
             from Scenes.GameOverView import GameOverView
             game_over_view = GameOverView(self.score_points)
             self.window.show_view(game_over_view)
-        else:
-            #if self.collides_with_sprite:
-                # self.collides_with_sprite.color = self.hit_base_color
-                # self.collides_with_sprite = None
-            self.collision = False
