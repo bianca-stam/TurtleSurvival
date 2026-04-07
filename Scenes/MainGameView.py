@@ -1,18 +1,51 @@
-import arcade
+"""
+Módulo que contiene la vista principal del juego.
+"""
 import random
 from constants import *
 from Sprites import *
 
 class GameView(arcade.View):
-    """
-    Main application class.
+    """Vista principal donde transcurre la partida.
+
+    Gestiona el bucle de juego completo: renderizado del fondo, jugador
+    y enemigos; movimiento por teclado; spawn periódico de enemigos;
+    detección de colisiones y transición a la pantalla de Game Over.
+
+    Attributes:
+        time_elapsed (float): Segundos transcurridos desde el inicio de la partida.
+        score_points (int): Puntuación actual calculada en función del tiempo.
+        start_x (float): Coordenada X central de la ventana, usada para centrar textos.
+        text_main_title (arcade.Text): Texto con el título del juego en pantalla.
+        tiempo_spawn (float): Acumulador de tiempo para controlar el intervalo de spawn.
+        collision (bool): Indica si el jugador está actualmente en colisión.
+        collides_with_sprite (arcade.Sprite | None): Sprite enemigo con el que colisionó
+            el jugador, o ``None`` si no hay colisión activa.
+        player_list (arcade.SpriteList): Lista que contiene únicamente al jugador.
+        sprite_list (arcade.SpriteList): Lista con todos los enemigos activos.
+        background_sprite_list (arcade.SpriteList): Lista con el sprite de fondo.
+        backgroung_img (arcade.Sprite): Sprite de la imagen de fondo.
+        player (Player): Instancia del jugador.
+        player_x (float): Posición X lógica del jugador (usada para moverlo suavemente).
+        player_y (float): Posición Y lógica del jugador.
+        player_directions (dict[str, bool]): Estado de las teclas de movimiento
+            (``'left'``, ``'right'``, ``'up'``, ``'down'``).
+        player_speed (float): Velocidad de movimiento del jugador en píxeles/segundo.
+        enemy_textures (list[dict]): Lista de diccionarios con los datos de cada tipo
+            de enemigo: nombre, texturas cargadas y escala aleatoria.
     """
     def __init__(self):
+        """Inicializa la vista de juego y precarga todos los recursos visuales.
+
+        Configura el estado inicial de la partida, crea los textos de HUD,
+        instancia al jugador y carga las hojas de sprites de todos los tipos
+        de enemigos para su uso posterior en el spawn.
+        """
         super().__init__()
         self.time_elapsed = 0
         self.score_points = 0
 
-        # Add the screen title
+        # Texto en la pantalla
         self.start_x = WINDOW_WIDTH/2
 
         self.text_main_title = arcade.Text(
@@ -43,14 +76,15 @@ class GameView(arcade.View):
         self.backgroung_img = arcade.Sprite(background, scale=0.6, center_x=WINDOW_WIDTH/2, center_y=WINDOW_HEIGHT/2)
         self.background_sprite_list.append(self.backgroung_img)
 
-        # Para el jugador
+        # Texturas para el jugador
         player_sheet = arcade.load_spritesheet("assets/images/sprites/Turtle/Idle.png")
         texture_list = player_sheet.get_texture_grid(size=(48, 48), columns=4, count=4)
 
-        # Para el jugador cuando muera
+        # Texturas para el jugador cuando muera
         player_sheet_death = arcade.load_spritesheet("assets/images/sprites/Turtle/Death.png")
         texture_list_death = player_sheet_death.get_texture_grid(size=(48, 48), columns=6, count=6)
 
+        # Inicializamos el jugador
         self.player = Player(texture_list, texture_list_death)
         self.player.scale = 1.5
         self.player_x = WINDOW_WIDTH/2
@@ -58,11 +92,12 @@ class GameView(arcade.View):
         self.player.position = (self.player_x, self.player_y)
         self.player_list.append(self.player)
 
+        # Añadimos las direcciones que puede ir y su velocidad predeterminada
         self.player_directions = {'left': False, 'right': False, 'up': False, 'down': False}
         self.player_speed = PLAYER_MOVEMENT_SPEED
 
         # Para los enemigos
-        # Cargamos las texturas de los enemigos para usarlas al hacer spawn
+        # Cargamos las texturas de los enemigos para usarlas al hacer el spawn
         snake_sheet = arcade.load_spritesheet("assets/images/sprites/Snake/Walk.png")
         octopus_sheet = arcade.load_spritesheet("assets/images/sprites/Octopus/Idle.png")
         shark_sheet = arcade.load_spritesheet("assets/images/sprites/Shark/Idle.png")
@@ -89,10 +124,22 @@ class GameView(arcade.View):
         ]
 
     def setup(self):
+        """Prepara el estado inicial de la partida.
+
+        Actualmente preserva la puntuación existente. Ampliar este metodo
+        para reiniciar variables de estado si se añade la opción de
+        reintentar la partida sin destruir la vista.
+        """
         self.score_points = self.score_points
 
     def add_enemy(self):
-        """Crea un enemigo aleatorio en el borde izquierdo de la pantalla"""
+        """Genera un enemigo aleatorio en uno de los cuatro bordes de la pantalla.
+
+        Selecciona aleatoriamente el tipo de enemigo y el lado de aparición.
+        La dirección y orientación del sprite se ajustan según el lado elegido:
+        la serpiente rota 90° al aparecer por arriba o abajo, y el resto de
+        enemigos invierten su escala horizontal al aparecer por la derecha.
+        """
         enemy_data = random.choice(self.enemy_textures)
 
         enemy = Player(enemy_data["textures"])
@@ -132,6 +179,12 @@ class GameView(arcade.View):
         self.sprite_list.append(enemy)
 
     def on_draw(self):
+        """Renderiza todos los elementos visuales del frame actual.
+
+        Orden de pintado: fondo → enemigos → jugador → HUD (título y puntos).
+        El texto de puntuación se instancia aquí para mostrar siempre el valor
+        más reciente de ``score_points``.
+        """
         self.clear()
 
         self.background_sprite_list.draw()
@@ -153,7 +206,14 @@ class GameView(arcade.View):
         text_points.draw()
 
     def on_key_press(self, key: int, modifiers: int) -> None:
-        """Called whenever a key is pressed. """
+        """Registra la tecla pulsada activando la dirección correspondiente.
+
+        Controles: W → arriba, S → abajo, A → izquierda, D → derecha.
+
+        Args:
+            key (int): Código de la tecla pulsada.
+            modifiers (int): Máscara de bits con modificadores activos (Shift, Ctrl…).
+        """
         if key == arcade.key.W:
             self.player_directions['up'] = True
         if key == arcade.key.S:
@@ -165,7 +225,12 @@ class GameView(arcade.View):
             self.player_directions['right'] = True
 
     def on_key_release(self, key: int, modifiers: int) -> None:
-        """Called when the user releases a key. """
+        """Registra la tecla liberada desactivando la dirección correspondiente.
+
+        Args:
+            key (int): Código de la tecla liberada.
+            modifiers (int): Máscara de bits con modificadores activos.
+        """
         if key == arcade.key.W:
             self.player_directions['up'] = False
         if key == arcade.key.S:
@@ -177,6 +242,21 @@ class GameView(arcade.View):
             self.player_directions['right'] = False
 
     def on_update(self, delta_time: float = 1 / 60, *args, **kwargs):
+        """Actualiza la lógica del juego en cada tick.
+
+        Responsabilidades por orden:
+        1. Avanza las animaciones de enemigos y jugador.
+        2. Incrementa el tiempo y recalcula la puntuación.
+        3. Mueve al jugador según las teclas activas y voltea su sprite.
+        4. Desplaza cada enemigo hacia el lado opuesto y lo elimina al salir.
+        5. Genera un nuevo enemigo cada ``SPAWN_INTERVAL`` segundos.
+        6. Detecta colisión jugador-enemigo y activa la animación de muerte.
+        7. Transiciona a ``GameOverView`` cuando la animación de muerte termina.
+
+        Args:
+            delta_time (float): Tiempo en segundos desde el último frame (default 1/60).
+        """
+
         self.sprite_list.update(delta_time)
         self.player_list.update(delta_time)
 
@@ -184,6 +264,7 @@ class GameView(arcade.View):
         self.score_points = int(self.time_elapsed * POINTS_PER_SECOND)
         self.score_points += int(self.time_elapsed * delta_time)
 
+        # Movimiento del jugador
         if self.player_directions['left']:
             self.player_x -=  self.player_speed * delta_time
             self.player.scale_x = -1.5
@@ -197,7 +278,8 @@ class GameView(arcade.View):
 
         self.player.position = self.player_x, self.player_y
 
-        # Mover enemigos hacia el lado opuesto a la pantalla e eliminarlos de la lista
+        # Movimiento de enemigos hacia el lado opuesto a la pantalla
+        # y eliminación de la lista de sprites
         for mob in self.sprite_list:
             if mob.lado == "up":
                 mob.center_y += mob.speed_Y * delta_time
@@ -223,27 +305,26 @@ class GameView(arcade.View):
                 if mob.center_x < 0:
                     mob.remove_from_sprite_lists()
 
-        # Spawn de enemigos cada SPAWN_INTERVAL segundos
+        # Spawn periódico de enemigos
         self.tiempo_spawn += delta_time
         if self.tiempo_spawn >= SPAWN_INTERVAL:
             self.add_enemy()
             self.tiempo_spawn = 0
 
-        # Comprobar muerte
+        # Detección de colisión y muerte del jugador
         hit = arcade.check_for_collision_with_list(self.player, self.sprite_list)
 
         if hit:
             self.collides_with_sprite = hit[0]
-            # En caso de que colisione es porq ha muerto
             self.player.die()
             self.player_speed = 0
 
         else:
             if self.collides_with_sprite:
                 self.collides_with_sprite = None
-                # FALTA CODIGO!
             self.collision = False
 
+        # Transición a pantalla de game over si ha muerto
         if self.player.ready_for_game_over:
             from Scenes.GameOverView import GameOverView
             game_over_view = GameOverView(self.score_points)
