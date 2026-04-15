@@ -53,7 +53,7 @@ class MenuView(arcade.View):
         self.background_sprite_list = arcade.SpriteList()
 
         # Background
-        background = "assets/images/background/background1/orig_big.png"
+        background = ":assets:images/background/background1/orig_big.png"
         self.background_img = arcade.Sprite(background, scale=0.6, center_x=WINDOW_WIDTH / 2,
                                             center_y=WINDOW_HEIGHT / 2)
         self.background_sprite_list.append(self.background_img)

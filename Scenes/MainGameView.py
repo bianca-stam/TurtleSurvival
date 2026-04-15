@@ -72,16 +72,16 @@ class GameView(arcade.View):
         self.background_sprite_list = arcade.SpriteList()
 
         # Background
-        background = "assets/images/background/background1/orig_big.png"
+        background = ":assets:images/background/background1/orig_big.png"
         self.backgroung_img = arcade.Sprite(background, scale=0.6, center_x=WINDOW_WIDTH/2, center_y=WINDOW_HEIGHT/2)
         self.background_sprite_list.append(self.backgroung_img)
 
         # Texturas para el jugador
-        player_sheet = arcade.load_spritesheet("assets/images/sprites/Turtle/Idle.png")
+        player_sheet = arcade.load_spritesheet(":assets:images/sprites/Turtle/Idle.png")
         texture_list = player_sheet.get_texture_grid(size=(48, 48), columns=4, count=4)
 
         # Texturas para el jugador cuando muera
-        player_sheet_death = arcade.load_spritesheet("assets/images/sprites/Turtle/Death.png")
+        player_sheet_death = arcade.load_spritesheet(":assets:images/sprites/Turtle/Death.png")
         texture_list_death = player_sheet_death.get_texture_grid(size=(48, 48), columns=6, count=6)
 
         # Inicializamos el jugador
@@ -98,11 +98,11 @@ class GameView(arcade.View):
 
         # Para los enemigos
         # Cargamos las texturas de los enemigos para usarlas al hacer el spawn
-        snake_sheet = arcade.load_spritesheet("assets/images/sprites/Snake/Walk.png")
-        octopus_sheet = arcade.load_spritesheet("assets/images/sprites/Octopus/Idle.png")
-        shark_sheet = arcade.load_spritesheet("assets/images/sprites/Shark/Idle.png")
-        jelly_sheet = arcade.load_spritesheet("assets/images/sprites/Jellyfish/Walk.png")
-        angler_sheet = arcade.load_spritesheet("assets/images/sprites/Anglerfish/Walk.png")
+        snake_sheet = arcade.load_spritesheet(":assets:images/sprites/Snake/Walk.png")
+        octopus_sheet = arcade.load_spritesheet(":assets:images/sprites/Octopus/Idle.png")
+        shark_sheet = arcade.load_spritesheet(":assets:images/sprites/Shark/Idle.png")
+        jelly_sheet = arcade.load_spritesheet(":assets:images/sprites/Jellyfish/Walk.png")
+        angler_sheet = arcade.load_spritesheet(":assets:images/sprites/Anglerfish/Walk.png")
 
         # Guardamos las texturas en una lista para elegir aleatoriamente
         self.enemy_textures = [

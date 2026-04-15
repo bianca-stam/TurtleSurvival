@@ -22,7 +22,7 @@ def main() -> None:
     Example:
         Para lanzar el juego directamente desde consola::
 
-            $ python main.py
+            $ python TurtleSurvival.py
     """
 
     window = arcade.Window(width=WINDOW_WIDTH, height=WINDOW_HEIGHT, title=WINDOW_TITLE)

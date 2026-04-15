@@ -17,7 +17,7 @@ class GameOverView(arcade.View):
         self.background_sprite_list = arcade.SpriteList()
 
         # Background
-        background = "assets/images/background/background1/orig_big.png"
+        background = ":assets:images/background/background1/orig_big.png"
         self.background_img = arcade.Sprite(background, scale=0.6, center_x=WINDOW_WIDTH / 2,
                                             center_y=WINDOW_HEIGHT / 2)
         self.background_sprite_list.append(self.background_img)
@@ -77,6 +77,6 @@ class GameOverView(arcade.View):
 
         El 'import' se hace dentro para evitar importaciones circulares.
         """
-        from main import MenuView
+        from TurtleSurvival import MenuView
         menu_view = MenuView()
         self.window.show_view(menu_view)
