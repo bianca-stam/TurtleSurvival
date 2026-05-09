@@ -92,7 +92,7 @@ Una vez finalizado, ve a la carpeta `dist/TurtleSurvival/`.
 
 El archivo para jugar es TurtleSurvival.exe.
 
-¡Importante!: Para compartirlo, debes comprimir toda la carpeta TurtleSurvival en un archivo .zip y enviársela a tus amigos. El .exe no funcionará si está fuera de su carpeta.
+¡Importante!: Para compartirlo, debes comprimir toda la carpeta TurtleSurvival (la que está dentro de dist) en un archivo .zip y enviársela a tus amigos. El .exe no funcionará si está fuera de su carpeta.
 
 
 ---
